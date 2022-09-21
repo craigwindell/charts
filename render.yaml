@@ -1,0 +1,624 @@
+---
+# Source: xnat/charts/xnat-web/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: myxnat-xnat-web
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: xnat/charts/postgresql/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myxnat-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.16.2
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/managed-by: Helm
+  namespace: xnat-dev
+type: Opaque
+data:
+  postgresql-postgres-password: "SUlSR2lyamhnQw=="
+  postgresql-password: "IVBhJCRXMHJk"
+---
+# Source: xnat/charts/xnat-web/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myxnat-xnat-web
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+type: Opaque
+stringData:
+  xnat-conf.properties: |
+    #
+    # xnat-conf.properties
+    # XNAT http://www.xnat.org
+    # Copyright (c) 2016, Washington University School of Medicine
+    # All Rights Reserved
+    #
+    # Released under the Simplified BSD.
+    #
+    datasource.driver=org.postgresql.Driver
+    datasource.url=jdbc:postgresql://myxnat-postgresql/xnat
+    datasource.username=xnat
+    datasource.password=!Pa$$W0rd
+    hibernate.dialect=org.hibernate.dialect.PostgreSQL9Dialect
+    hibernate.hbm2ddl.auto=update
+    hibernate.show_sql=false
+    hibernate.cache.use_second_level_cache=true
+    hibernate.cache.use_query_cache=true
+---
+# Source: xnat/charts/xnat-web/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myxnat-xnat-web
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+data:
+  passwd: |
+    root:x:0:0:root:/root:/bin/bash
+    daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+    bin:x:2:2:bin:/bin:/usr/sbin/nologin
+    sys:x:3:3:sys:/dev:/usr/sbin/nologin
+    sync:x:4:65534:sync:/bin:/bin/sync
+    games:x:5:60:games:/usr/games:/usr/sbin/nologin
+    man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+    lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+    mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+    news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+    uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+    proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+    www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+    backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+    list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+    irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+    gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+    nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+    _apt:x:100:65534::/nonexistent:/usr/sbin/nologin
+    tomcat:x:1000:1000::/data/xnat/home:/usr/sbin/nologin
+---
+# Source: xnat/charts/xnat-web/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myxnat-xnat-web-archive
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  accessModes: [ "ReadWriteMany" ]
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: "1Gi"
+  storageClassName: hpc-nfs
+---
+# Source: xnat/charts/xnat-web/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myxnat-xnat-web-prearchive
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  accessModes: [ "ReadWriteMany" ]
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: "1Gi"
+  storageClassName: hpc-nfs
+---
+# Source: xnat/charts/postgresql/templates/svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myxnat-postgresql-headless
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.16.2
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/managed-by: Helm
+    # Use this annotation in addition to the actual publishNotReadyAddresses
+    # field below because the annotation will stop being respected soon but the
+    # field is broken in some versions of Kubernetes:
+    # https://github.com/kubernetes/kubernetes/issues/58662
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  namespace: xnat-dev
+spec:
+  type: ClusterIP
+  clusterIP: None
+  # We want all pods in the StatefulSet to have their addresses published for
+  # the sake of the other Postgresql pods even before they're ready, since they
+  # have to be able to talk to each other in order to become ready.
+  publishNotReadyAddresses: true
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: myxnat
+---
+# Source: xnat/charts/postgresql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myxnat-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.16.2
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+  namespace: xnat-dev
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: myxnat
+    role: primary
+---
+# Source: xnat/charts/xnat-web/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myxnat-xnat-web
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+  sessionAffinity: "ClientIP"
+---
+# Source: xnat/charts/xnat-web/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myxnat-xnat-web-headless
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+  sessionAffinity: "ClientIP"
+---
+# Source: xnat/charts/xnat-web/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myxnat-xnat-web-dicom-scp
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: "NodePort"
+  ports:
+    - name: xnat-dicom
+      port: 8104
+      targetPort: 8104
+  selector:
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+  sessionAffinity: "ClientIP"
+---
+# Source: xnat/charts/postgresql/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: myxnat-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.16.2
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: primary
+  annotations:
+  namespace: xnat-dev
+spec:
+  serviceName: myxnat-postgresql-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: myxnat
+      role: primary
+  template:
+    metadata:
+      name: myxnat-postgresql
+      labels:
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-10.16.2
+        app.kubernetes.io/instance: myxnat
+        app.kubernetes.io/managed-by: Helm
+        role: primary
+        app.kubernetes.io/component: primary
+    spec:      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: postgresql
+                    app.kubernetes.io/instance: myxnat
+                    app.kubernetes.io/component: primary
+                namespaces:
+                  - "xnat-dev"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      automountServiceAccountToken: false
+      containers:
+        - name: myxnat-postgresql
+          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r28
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
+            - name: POSTGRESQL_VOLUME_DIR
+              value: "/bitnami/postgresql"
+            - name: PGDATA
+              value: "/bitnami/postgresql/data"
+            - name: POSTGRES_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: myxnat-postgresql
+                  key: postgresql-postgres-password
+            - name: POSTGRES_USER
+              value: "xnat"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: myxnat-postgresql
+                  key: postgresql-password
+            - name: POSTGRES_DB
+              value: "xnat"
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: "no"
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: "false"
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: "off"
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: "error"
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: "pgaudit"
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U "xnat" -d "dbname=xnat" -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U "xnat" -d "dbname=xnat" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: data
+              mountPath: /bitnami/postgresql
+              subPath: 
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
+---
+# Source: xnat/charts/xnat-web/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: myxnat-xnat-web
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: xnat-web
+      app.kubernetes.io/instance: myxnat
+      version: "1.8.4.1"
+      app: xnat-web
+  serviceName: myxnat-xnat-web
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 9257d4dd11b33a55958c6dc0fed23a81f6b2c91d46ba6e6c79f0dd86b344412e
+      labels:
+        app.kubernetes.io/name: xnat-web
+        app.kubernetes.io/instance: myxnat
+        version: "1.8.4.1"
+        app: xnat-web
+    spec:
+      serviceAccountName: myxnat-xnat-web
+      securityContext:
+        {}
+      containers:
+        - name: xnat-web
+          securityContext:
+            {}
+          image: "ghcr.io/australian-imaging-service/xnat-web:1.8.4.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /app/template/Login.vm#!
+              port: http
+            failureThreshold: 1
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /app/template/Login.vm#!
+              port: http
+          startupProbe:
+            httpGet:
+              path: /app/template/Login.vm#!
+              port: http
+            failureThreshold: 15
+            periodSeconds: 10
+          resources:
+            {}
+          volumeMounts:
+            - name: passwd
+              mountPath: /etc/passwd
+              readOnly: true
+              subPath: passwd
+            - name: tomcat
+              mountPath: /usr/local/tomcat
+            - name: conf-catalina
+              mountPath: /usr/local/tomcat/conf/Catalina
+            - name: xnat-home
+              mountPath: /data/xnat/home
+            - name: home-plugins
+              mountPath: /data/xnat/home/plugins
+            - name: xnat-config
+              mountPath: "/data/xnat/home/config/xnat-conf.properties"
+              readOnly: true
+              subPath: "xnat-conf.properties"
+            - mountPath: "/data/xnat/cache"
+              name: "cache"
+            - mountPath: "/data/xnat/archive"
+              name: "archive"
+            - mountPath: "/data/xnat/prearchive"
+              name: "prearchive"
+      initContainers:
+        - name: home-init
+          image: "ghcr.io/australian-imaging-service/xnat-web:1.8.4.1"
+          imagePullPolicy: IfNotPresent
+          command:
+            - 'bash'
+            - '-c'
+            - |
+              set -x
+              shopt -s extglob
+              plugins=(  )
+              # Copy Tomcat folder
+              [ -d /TOMCAT ] && cp -r --preserve=mode,timestamps /usr/local/tomcat/* /TOMCAT
+              chown -R 1000 /TOMCAT
+              # Copy XNAT_HOME directory excluding the plugins folder
+              cp -r --preserve=mode,timestamps ${XNAT_HOME}/!(plugins) /XNAT_HOME
+              chown -R 1000 /XNAT_HOME
+              # Copy plugins that are configured in values.yml
+              for plugin in ${plugins[@]}; do
+                cp -r --preserve=mode,timestamps ${XNAT_HOME}/plugins/${plugin}-* /HOME-PLUGINS || true
+              done
+          volumeMounts:
+            - name: tomcat
+              mountPath: /TOMCAT
+            - name: xnat-home
+              mountPath: /XNAT_HOME
+            - name: home-plugins
+              mountPath: /HOME-PLUGINS
+      volumes:
+        - name: passwd
+          configMap:
+            name: myxnat-xnat-web
+            items:
+              - key: passwd
+                path: passwd
+        - name: tomcat
+          emptyDir: {}
+        # SEVERE: Unable to create directory for deployment: [/usr/local/tomcat/conf/Catalina/localhost]
+        - name: conf-catalina
+          emptyDir: {}
+        - name: xnat-home
+          emptyDir: {}
+        - name: home-plugins
+          emptyDir: {}
+        - name: xnat-config
+          secret:
+            secretName: myxnat-xnat-web
+        - name: archive
+          persistentVolumeClaim:
+            claimName: myxnat-xnat-web-archive
+        - name: prearchive
+          persistentVolumeClaim:
+            claimName: myxnat-xnat-web-prearchive
+  volumeClaimTemplates:
+    - metadata:
+        name: "cache"
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 10Gi
+---
+# Source: xnat/charts/xnat-web/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myxnat-xnat-web
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ingressClassName: "avi-lb-qut-private-shared"
+  rules:
+    - host: "ais-xnat-dev.qut.edu.au"
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: myxnat-xnat-web
+                port: 
+                  number: 80
+---
+# Source: xnat/charts/xnat-web/templates/tests/postgres-connection-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myxnat-postgresql-test-connection
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+  - image: ubuntu
+    env:
+      - name: POSTGRESQL_SERVICE_NAME
+        value: myxnat-postgresql
+      - name: POSTGRES_POSTGRES_PASSWORD
+        value: !Pa$$W0rd
+      - name: POSTGRES_USER
+        value: xnat
+      - name: POSTGRES_DB
+        value: xnat
+    command: ["/bin/sh"]
+    args: ["-c","apt-get update -y && apt-get install postgresql-client -y && psql postgresql://$(POSTGRES_USER):$(POSTGRES_POSTGRES_PASSWORD)@$(POSTGRESQL_SERVICE_NAME)/$(POSTGRES_DB)"]
+    imagePullPolicy: IfNotPresent
+    name: ubuntu
+  restartPolicy: Never
+---
+# Source: xnat/charts/xnat-web/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "myxnat-xnat-web-test-connection"
+  labels:
+    helm.sh/chart: xnat-web-1.1.5
+    app.kubernetes.io/name: xnat-web
+    app.kubernetes.io/instance: myxnat
+    app.kubernetes.io/version: "1.8.4.1"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['myxnat-xnat-web:80']
+  restartPolicy: Never

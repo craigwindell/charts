@@ -1,0 +1,20 @@
+global:
+  postgresql:
+    postgresqlPassword: "!Pa$$W0rd"
+
+xnat-web:
+  volumes:
+    archive:
+      storageClass: hpc-nfs
+    prearchive:
+      storageClass: hpc-nfs
+  service:
+    type: NodePort
+  ingress:
+    enabled: true
+    ingressClassName: avi-lb-qut-private-shared
+    hosts:
+      - host: "ais-xnat-dev.eres.qut.edu.au"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
