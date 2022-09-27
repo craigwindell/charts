@@ -13,6 +13,17 @@ entries:
     - https://github.com/craigwindell/charts/releases/download/ctp-1.1.1/ctp-1.1.1.tgz
     version: 1.1.1
   - apiVersion: v2
+    appVersion: v20220603
+    created: "2022-09-27T22:34:13.781477453Z"
+    description: Clinical Trial Processor (CTP), provides all the processing features
+      of a MIRC site.
+    digest: 988e40b0a4f17a42081bf997b893a90123bc2c9a47736a9f80460582cdefd825
+    name: ctp
+    type: application
+    urls:
+    - https://github.com/craigwindell/charts/releases/download/ctp-1.1.0/ctp-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
     appVersion: "2020090901"
     created: "2022-04-11T02:21:25.551123415Z"
     description: Clinical Trial Processor (CTP), provides all the processing features
@@ -377,4 +388,4 @@ entries:
     urls:
     - https://github.com/craigwindell/charts/releases/download/xnat-qut-1.1.6/xnat-qut-1.1.6.tgz
     version: 1.1.6
-generated: "2022-09-27T22:30:31.742739372Z"
+generated: "2022-09-27T22:34:13.781583354Z"
